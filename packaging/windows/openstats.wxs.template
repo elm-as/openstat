@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Template WiX pour OpenStats Desktop.
+  Copier ce fichier en `openstats.wxs` et remplir les chemins / GUID.
+
+  Génération du MSI :
+    candle.exe -arch x64 -out build\openstats.wixobj packaging\windows\openstats.wxs
+    light.exe -ext WixUIExtension -out dist\OpenStats-Setup.msi build\openstats.wixobj
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product
+        Id="*"
+        Name="OpenStats Desktop"
+        Language="1036"
+        Version="0.1.0"
+        Manufacturer="Elmas Labs"
+        UpgradeCode="PUT-A-NEW-GUID-HERE">
+
+        <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+
+        <MajorUpgrade DowngradeErrorMessage="Une version plus récente d'OpenStats est déjà installée." />
+        <MediaTemplate EmbedCab="yes" />
+
+        <Feature Id="ProductFeature" Title="OpenStats" Level="1">
+            <ComponentGroupRef Id="ProductComponents" />
+        </Feature>
+
+        <UI>
+            <UIRef Id="WixUI_InstallDir" />
+            <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+        </UI>
+    </Product>
+
+    <Fragment>
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="ProgramFiles64Folder">
+                <Directory Id="INSTALLFOLDER" Name="OpenStats" />
+            </Directory>
+            <Directory Id="ProgramMenuFolder">
+                <Directory Id="ApplicationProgramsFolder" Name="OpenStats" />
+            </Directory>
+        </Directory>
+    </Fragment>
+
+    <Fragment>
+        <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+            <!--
+              À générer automatiquement avec heat.exe :
+                heat.exe dir dist\OpenStats -gg -sfrag -srd -dr INSTALLFOLDER -cg ProductComponents -out dist\components.wxs
+            -->
+        </ComponentGroup>
+    </Fragment>
+</Wix>

@@ -1,0 +1,15 @@
+{
+  "name": "example-zscore",
+  "version": "0.1.0",
+  "author": "Elmas Labs",
+  "category": "custom",
+  "description": "Détection d'outliers via Z-score (exemple de plugin officiel).",
+  "entry_point": "plugin.py",
+  "api_version": "1.0",
+  "openstats_min_version": "0.1.0",
+  "requires_python": ">=3.11",
+  "dependencies": [],
+  "permissions": ["dataset.read"],
+  "license": "MIT",
+  "repository": "https://github.com/elm-as/openstat"
+}

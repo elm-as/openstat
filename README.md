@@ -51,17 +51,15 @@ OpenStats Desktop est un laboratoire analytique moderne pour data analysts, éco
 
 | Couche | Technologie |
 |---|---|
-| **UI** | PySide6 (Qt 6) + QML |
-| **Charts** | QtCharts *(transition vers PyQtGraph prévue — voir roadmap)* |
-| **Core engine** | Python 3.11+ (asyncio, QThreadPool) |
-| **Storage** | DuckDB + Parquet + Apache Arrow |
-| **Analytics** | pandas, polars, statsmodels, linearmodels, arch, scikit-learn, shap, scipy |
-| **Résultat unifié** | `AnalysisResult` standardisé (tables, charts, metrics, diagnostics, interpretations, artifacts, provenance) |
-| **LLM (BYOK)** | Clients HTTP (httpx) vers providers tiers — aucune dépendance lourde |
-| **Auth** | SQLite chiffré local (cryptography / Fernet) |
-| **Plugin sandbox** | RestrictedPython + subprocess isolé + permissions zero-trust |
-| **Reproductibilité** | `Provenance` (paramètres, versions librairies, seed, dataset version, durée) |
-| **Packaging** | PyInstaller + Qt Installer Framework (Windows MSI) |
+| **UI** | PySide6 (Qt 6) + Thème Professionnel (QSS/Tailwind-like) |
+| **Icons** | QtAwesome (Font Awesome 5 Vector Icons) |
+| **Charts** | PyQtGraph (Performance native) |
+| **Core engine** | Python 3.10+ (Architecture Jobs Asynchrones) |
+| **Storage** | DuckDB 1.1+ + Parquet + Apache Arrow |
+| **Analytics** | pandas, statsmodels, linearmodels, scikit-learn |
+| **Résultat unifié** | `ResultStore` standardisé avec export Multi-format (HTML/PDF/Excel) |
+| **LLM (BYOK)** | Système de clés chiffrées (Fernet) — DeepSeek, OpenAI, Anthropic |
+| **Packaging** | PyInstaller + Windows MSI Framework |
 
 ### Évolution architecturale (long terme)
 
@@ -319,61 +317,115 @@ OpenStats-Desktop/
 
 ### ✅ Complété
 
-- **Bootstrap projet** — structure, pyproject, gitignore, tests pytest
+#### Analytics
+
+- **Statistiques descriptives** — numérique (mean, std, quartiles, skew, kurtosis, CV, IC95 Student), catégoriel, datetime
+- **Corrélations** — Pearson / Spearman / Kendall + matrice p-values + top pairs
+- **11 tests d'hypothèses** — t (1/2/pairé), Mann-Whitney, Wilcoxon, ANOVA, Kruskal, Chi², normalité (Shapiro/D'Agostino/Anderson), Levene, Bartlett — avec tailles d'effet et interprétations FR
+- **Multivariée & ACP** — KMO, Bartlett, scree, cercle corrélation, biplot, Varimax, Promax, contributions, cos²
+- **Clustering** — K-Means, Hiérarchique (Ward), DBSCAN + métriques de qualité (Silhouette, Davies-Bouldin) et projection ACP 2D
+- **OLS** — SE robustes (HC0–HC3, HAC), diagnostics complets
+- **Logit / Probit** — odds ratios, pseudo R², LR test
+- **Panel** — Pooled, FE, RE, Between, First Differences, Hausman
+- **Time Series** — ADF, KPSS, ACF/PACF, ARIMA + forecast
+- **ML compétitif** — 6 algos régression / 4 classification, ranking auto
+
+#### Infrastructure
+
+- **Bootstrap projet** — structure, pyproject, gitignore
 - **Storage layer** — DuckDB + Parquet versionné + Arrow + `DatasetRegistry`
 - **Core engine** — ingestion (CSV/TSV/Excel/JSON/JSONL/Parquet), profilage 14 stats/colonne
+- **Data Cleaning** — imputation (mean/median/knn), suppression doublons, standardisation, détection d'outliers (IQR, Z-score)
+- **Reporting** — génération de rapports en PDF (ReportLab), HTML (Jinja2) et Excel (OpenPyXL)
 - **Shell UI Qt** — sidebar 11 sections, menu, toolbar, statusbar, high-DPI
 - **Vue Données** — import, liste datasets, table virtualisée, profil colonnes
 - **DataTableView** — `QAbstractTableModel` + `df.iat`, virtualisation Qt native
-- **Analytics descriptive** — numérique (mean, std, quartiles, skew, kurtosis, CV, IC95), catégoriel, datetime
-- **Analytics corrélation** — Pearson / Spearman / Kendall + matrice p-values + top pairs
-- **Tests d'hypothèses** — 11 tests : t (1/2/pairé), Mann-Whitney, Wilcoxon, ANOVA, Kruskal, Chi², normalité (Shapiro/D'Agostino/Anderson), Levene, Bartlett — chacun avec tailles d'effet & interprétation FR auto
 - **`AnalysisResult` standardisé** — tables, charts, metrics, diagnostics, interpretations, artifacts, logs, provenance
 - **ChartWidget QtCharts** — histogram, bar, line, scatter, box, heatmap (palette divergente)
-- **Vue Analyses** — dataset selector, type d'analyse, form dynamique tests, rendu unifié résultats + charts
-- **LLM BYOK** — 9 providers builtin + custom, keystore Fernet chiffré
-- **Plugin contract** — manifest Pydantic, `PLUGIN_API_VERSION`, permissions zero-trust, signature ed25519 (métadonnées)
+- **Vue Analyses unifiée** — dataset selector + 30+ analyses dans une seule combo, dialog target/features/panel, rendu standardisé résultats + charts
+- **Vue Paramètres** — config BYOK provider/clé + ajout custom + test connexion
+- **Vue Plugins** — install/uninstall/details (permissions, API version)
+- **LLM BYOK** — 9 providers builtin + custom, keystore Fernet chiffré, client unifié OpenAI/Anthropic compatible
+- **Plugin system complet** — manifest Pydantic, `PLUGIN_API_VERSION`, permissions zero-trust, signature ed25519, loader, registry, sandbox runner, plugin officiel `example-zscore`
+- **Dialog d'analyse avancée** — sélection target/features/entity/time avec validation
 
-### 🟡 En cours
+#### Régressions avancées (Phase 2)
 
-- ACP enrichie + visualisations multivariées (cercle corrélation, biplot, scree, KMO, Bartlett, Varimax, Promax)
-- Régressions avancées (linearmodels : IV/2SLS, robust SE, clustered, HAC, quantile)
-- Données de panel (FE, RE, GMM, Hausman, IPS, LLC, Pedroni, Kao, Westerlund)
+- **IV / 2SLS** — variables instrumentales avec tests Sargan + Wu-Hausman
+- **Régression quantile** — plusieurs niveaux simultanés avec trajectoires des coefficients
+- **Tobit** — censure gauche/droite, MLE custom
+- **Heckman 2-step** — correction du biais de sélection (Probit + IMR)
 
-### 🔵 Planifié
+#### Panel data avancé (Phase 2)
 
-#### Infrastructure
-- **Migration QtCharts → PyQtGraph** (perf scientifique, datasets >1M points)
-- **Job system** (`/core/jobs/`) : queue, worker pool, progress events, cancellable tasks, result store — indispensable pour ne pas freezer l'UI sur grosses analyses
-- **Virtualisation explicite des DataFrames** : virtual scrolling, lazy row loading, column virtualization, pagination memory-aware (au-delà de la virtualisation Qt actuelle)
-- **Plugin loader + sandbox runner** (RestrictedPython → subprocess isolé → microVM)
-- **Workflow DAG engine** : composition reproductible Cleaning → Transform → FE → Model → Eval → Report
-- **Projects, sessions, snapshots** : persistance multi-fichiers + reprise après fermeture
+- **Pesaran CD** — dépendance transversale
+- **Wooldridge AR(1)** — autocorrélation panel
+- **Breusch-Pagan LM** — RE vs Pooled
+- **Stationnarité panel** — IPS, LLC, Fisher-ADF, Hadri
+- **Cointegration panel** — Kao, Pedroni, Westerlund
 
-#### Séries temporelles
-- ARIMA, SARIMA, Holt-Winters, ARDL
-- VAR, VECM, BVAR, Granger, IRF, FEVD, Johansen
+#### Séries temporelles complètes (Phase 2)
 
-#### Machine Learning
-- 15+ algorithmes (régression + classification)
-- Entraînement compétitif avec ranking + SHAP
+- **VAR** — + IRF + FEVD + tests de causalité de Granger
+- **Johansen** — trace + max eigen + sélection automatique du rang
+- **VECM** — vecteurs de cointegration + ajustement α
+- **Holt-Winters** — lissage exponentiel triple + forecast
+- **ARDL** — modèle à retards distribués
 
-#### Distribution
-- Packaging Windows MSI signed + auto-update
-- AppImage Linux + DMG macOS
-- Marketplace plugins en ligne
+#### ML étendu (Phase 2)
+
+- **15+ algorithmes** : LR, Ridge, Lasso, ElasticNet, Huber, DT, RF, ExtraTrees, GB, AdaBoost, KNN, SVR/SVM, MLP, NB, **XGBoost**, **LightGBM** (si installés)
+- **SHAP** — importance globale via TreeExplainer
+
+#### Infrastructure (Phase 2)
+
+- **Job system** (`core/jobs/`) — queue, worker pool, progress signals Qt, cancellation tokens, result store LRU
+- **Workflow DAG engine** (`core/workflow/`) — composition Cleaning → Transform → FE → Model → Eval → Report avec détection de cycles
+- **Projects/Sessions/Snapshots** (`core/projects/`) — persistance multi-fichiers, reprise après fermeture, snapshots horodatés
+- **Virtualisation explicite DataFrames** (`storage/virtual_dataset.py`) — lecture paginée via DuckDB, jamais tout en RAM
+- **VirtualTableModel** — cache LRU de pages, jamais > N pages en mémoire
+- **PyQtGraph adapter** (`ui/widgets/chart_widget_pg.py`) — rendu scientifique perf, optionnel via `pip install pyqtgraph`
+- **Subprocess sandbox** (`sandbox/subprocess_runner.py`) — isolation OS pour plugins, timeout hard
+
+#### Distribution (Phase 2)
+
+- **Scripts de packaging** : `packaging/windows/build_msi.ps1`, `linux/build_appimage.sh`, `macos/build_dmg.sh`
+- **Template WiX** pour MSI signed
+- **Auto-update** — architecture documenter (`packaging/README.md`)
 
 ### ⚪ Long terme (v2+)
 
 - **Rust + PyO3** pour kernels analytiques critiques (PCA massif, ML, streaming)
 - **GPU compute** optionnel (cuDF / RAPIDS / Numba CUDA) pour preprocessing
-- **OpenStats Cloud** : sync, collaboration, marketplace plugins, IA distante (complémentaire au desktop)
+- **OpenStats Cloud** : sync, collaboration, marketplace plugins en ligne
+- **microVM Firecracker** ou **WASM/Pyodide** pour sandbox plugin niveau 3
+- **BVAR** — Bayesian VAR (priors Minnesota / Litterman)
 
-### ⚠️ Limites connues (v0.1.x)
+### ⚠️ Limites connues (v0.2.x)
 
 - **GIL Python** : se sentira sur PCA massive / gros ML / preprocessing parallèle. Mitigations futures : `multiprocessing`, `polars`, `numba`, kernels Rust.
-- **Pas encore de job scheduler async** : analyses lourdes bloquent le thread UI — priorité haute en planning.
-- **QtCharts limité** : pas de boxplot natif Python jusqu'à récemment, performances sur scatterplots massifs → PyQtGraph en migration.
+- **PyQtGraph en option** : installé via `pip install "openstats[charts-pg]"`. Le ChartWidget par défaut reste QtCharts.
+- **Subprocess sandbox** : phase 2, isolation OS basique sans limites mémoire/CPU strictes (Linux uniquement avec `resource`). Phase 3 : microVM/WASM.
+- **IPS/LLC/Pedroni/Westerlund** : implémentations pédagogiques basées sur les principes des articles d'origine. Pour publications académiques rigoureuses, valider avec un package R/Stata spécialisé.
+- **BVAR non implémenté** : VAR / VECM / Johansen suffisent pour 95% des cas ; BVAR sera ajouté selon demande.
+
+---
+
+## Statistiques projet
+
+| | |
+|---|---|
+| **Modules Python** | 50+ |
+| **Lignes de code** | ~10 000 |
+| **Tests pytest** | 110+ |
+| **Analyses disponibles** | **50+** : descriptive, corrélations, 11 tests d'hypothèses, ACP ×3, OLS ×2, Logit, Probit, **quantile, Tobit, IV/2SLS, Heckman**, Panel ×4, Hausman, **Pesaran CD, Wooldridge, BP-LM, IPS, LLC, Fisher-ADF, Hadri, Kao, Pedroni, Westerlund**, stationnarité, ARIMA, **Holt-Winters, ARDL, VAR+IRF+FEVD+Granger, Johansen, VECM**, ML compétitif (15+ algos), **SHAP** |
+| **Providers LLM (BYOK)** | 9 builtin + custom illimité |
+| **Permissions plugins** | 9 catégories zero-trust |
+| **Charts supportés** | histogram, bar, line, scatter, box, heatmap, qq, residuals (QtCharts + PyQtGraph optionnel) |
+| **Sandbox** | in-process + subprocess isolé |
+| **Job system** | async ThreadPool, progress signals Qt, cancellation, result store LRU |
+| **Workflow** | DAG avec détection cycles + exécution séquentielle |
+| **Persistance projets** | multi-fichiers (workflows + sessions + snapshots) |
 
 ---
 
