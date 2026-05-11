@@ -47,16 +47,37 @@ OpenStats Desktop est un laboratoire analytique moderne pour data analysts, éco
 
 ## Stack technique
 
+### Stack actuelle (v0.1.x)
+
 | Couche | Technologie |
 |---|---|
-| **UI** | PySide6 (Qt 6) + QML + QtCharts |
+| **UI** | PySide6 (Qt 6) + QML |
+| **Charts** | QtCharts *(transition vers PyQtGraph prévue — voir roadmap)* |
 | **Core engine** | Python 3.11+ (asyncio, QThreadPool) |
 | **Storage** | DuckDB + Parquet + Apache Arrow |
-| **Analytics** | pandas, polars, statsmodels, linearmodels, arch, scikit-learn, shap |
+| **Analytics** | pandas, polars, statsmodels, linearmodels, arch, scikit-learn, shap, scipy |
+| **Résultat unifié** | `AnalysisResult` standardisé (tables, charts, metrics, diagnostics, interpretations, artifacts, provenance) |
 | **LLM (BYOK)** | Clients HTTP (httpx) vers providers tiers — aucune dépendance lourde |
-| **Auth** | SQLite chiffré local (cryptography) |
-| **Sandbox plugins** | RestrictedPython + subprocess isolé |
+| **Auth** | SQLite chiffré local (cryptography / Fernet) |
+| **Plugin sandbox** | RestrictedPython + subprocess isolé + permissions zero-trust |
+| **Reproductibilité** | `Provenance` (paramètres, versions librairies, seed, dataset version, durée) |
 | **Packaging** | PyInstaller + Qt Installer Framework (Windows MSI) |
+
+### Évolution architecturale (long terme)
+
+```
+UI : Qt 6 + QML  (PySide6 d'abord, Qt C++ futur si besoin perf)
+  ↓
+Core Engine : Python (v0/v1) → Rust + PyO3 (v2+) pour kernels analytiques
+  ↓
+Storage : DuckDB + Parquet + Arrow IPC zero-copy
+  ↓
+Analytics : pandas + statsmodels + linearmodels (CPU)
+            polars (vectorisé, optionnel)
+            sklearn / xgboost / lightgbm (ML)
+```
+
+Le Rust n'est introduit **que lorsque** les benchmarks justifient le coût de complexité (kernels critiques uniquement).
 
 ---
 
@@ -96,7 +117,10 @@ OpenStats Desktop est un laboratoire analytique moderne pour data analysts, éco
 ### Visualisation
 - Toute analyse produit automatiquement graphiques + diagnostics visuels
 - Export publication-ready (PNG haute résolution, SVG, PDF vectoriel)
-- Rendu GPU via QtCharts
+- Rendu GPU — actuellement via **QtCharts**, migration planifiée vers **PyQtGraph** pour :
+  - performance sur datasets massifs (>1M points)
+  - flexibilité scientifique (paramètres fins, custom rendering)
+  - usage standard dans la communauté scientifique Python
 
 ### IA intégrée — BYOK (Bring Your Own Key)
 
@@ -126,10 +150,49 @@ Les clés sont **chiffrées localement** (Fernet, dossier de configuration utili
 - Recommandations de modèles ML adaptés au dataset
 - Aide à la rédaction de rapports
 
-### Plugin system
-- Contrat `OpenStatsPlugin` standardisé
-- Marketplace officielle (GitHub)
-- Sandbox d'exécution sécurisé
+### Plugin system — Zero-trust & versionné
+
+- **Contrat strict** : tout plugin hérite de `OpenStatsPlugin`, retourne un `AnalysisResult`
+- **Versioning d'API** : `PLUGIN_API_VERSION` + `openstats_min_version` vérifiés au chargement → aucun plugin obsolète ne casse l'app
+- **Permissions zero-trust** : chaque plugin déclare explicitement ses besoins (`filesystem.read`, `network.http`, `dataset.write`, `llm.call`, etc.) — l'utilisateur valide à l'installation
+- **Signature numérique** (ed25519) optionnelle, publishers de confiance
+- **Sandbox d'exécution** : RestrictedPython phase 1 → microVM/WASM phase 5
+- **Marketplace officielle** : [github.com/elm-as/openstat](https://github.com/elm-as/openstat)
+- **Catalogue cible** : survival analysis, spatial econometrics, deep learning, NLP, Bayesian, geospatial, causal inference, bioinformatics
+
+### Pipeline analytique (workflow DAG)
+
+Chaque projet OpenStats peut composer un **workflow** comme une chaîne reproductible :
+
+```
+Dataset → Cleaning → Transformation → Feature Engineering
+        → Modeling → Evaluation → Reporting
+```
+
+Objectif : approche à la KNIME / RapidMiner / Alteryx, même avec une UI simple.
+Chaque étape est ré-exécutable et versionnée.
+
+### Reproductibilité (recherche-grade)
+
+Chaque `AnalysisResult` embarque automatiquement une `Provenance` :
+
+- paramètres exacts utilisés
+- versions des librairies (`scipy`, `numpy`, `pandas`, `statsmodels`...)
+- version Python + plateforme
+- ID + version du dataset source
+- seed aléatoire
+- durée d'exécution
+
+Tout résultat peut être **ré-exécuté à l'identique** — condition sine qua non en économétrie / recherche académique.
+
+### Projets, sessions, snapshots
+
+*Phase 5 — architecture prévue :*
+
+- **Projets** persistants (datasets + workflows + résultats)
+- **Sessions** sauvegardées (reprise en l'état après fermeture)
+- **Snapshots** à chaque transformation majeure
+- **Historique** complet des opérations (audit trail)
 
 ---
 
@@ -254,22 +317,66 @@ OpenStats-Desktop/
 
 ## Roadmap
 
-- [x] **Phase 0** — Bootstrap projet
-- [ ] **Phase 1** — Shell UI Qt + storage DuckDB
-- [ ] **Phase 2** — Core data engine + analyses de base
-- [ ] **Phase 3** — Panel data + régressions avancées
-- [ ] **Phase 4** — Visualisations natives + ACP enrichie
-- [ ] **Phase 5** — Plugin system + sandbox
-- [ ] **Phase 6** — LLM local + assistant IA
-- [ ] **Phase 7** — Packaging MSI + auto-update
+### ✅ Complété
+
+- **Bootstrap projet** — structure, pyproject, gitignore, tests pytest
+- **Storage layer** — DuckDB + Parquet versionné + Arrow + `DatasetRegistry`
+- **Core engine** — ingestion (CSV/TSV/Excel/JSON/JSONL/Parquet), profilage 14 stats/colonne
+- **Shell UI Qt** — sidebar 11 sections, menu, toolbar, statusbar, high-DPI
+- **Vue Données** — import, liste datasets, table virtualisée, profil colonnes
+- **DataTableView** — `QAbstractTableModel` + `df.iat`, virtualisation Qt native
+- **Analytics descriptive** — numérique (mean, std, quartiles, skew, kurtosis, CV, IC95), catégoriel, datetime
+- **Analytics corrélation** — Pearson / Spearman / Kendall + matrice p-values + top pairs
+- **Tests d'hypothèses** — 11 tests : t (1/2/pairé), Mann-Whitney, Wilcoxon, ANOVA, Kruskal, Chi², normalité (Shapiro/D'Agostino/Anderson), Levene, Bartlett — chacun avec tailles d'effet & interprétation FR auto
+- **`AnalysisResult` standardisé** — tables, charts, metrics, diagnostics, interpretations, artifacts, logs, provenance
+- **ChartWidget QtCharts** — histogram, bar, line, scatter, box, heatmap (palette divergente)
+- **Vue Analyses** — dataset selector, type d'analyse, form dynamique tests, rendu unifié résultats + charts
+- **LLM BYOK** — 9 providers builtin + custom, keystore Fernet chiffré
+- **Plugin contract** — manifest Pydantic, `PLUGIN_API_VERSION`, permissions zero-trust, signature ed25519 (métadonnées)
+
+### 🟡 En cours
+
+- ACP enrichie + visualisations multivariées (cercle corrélation, biplot, scree, KMO, Bartlett, Varimax, Promax)
+- Régressions avancées (linearmodels : IV/2SLS, robust SE, clustered, HAC, quantile)
+- Données de panel (FE, RE, GMM, Hausman, IPS, LLC, Pedroni, Kao, Westerlund)
+
+### 🔵 Planifié
+
+#### Infrastructure
+- **Migration QtCharts → PyQtGraph** (perf scientifique, datasets >1M points)
+- **Job system** (`/core/jobs/`) : queue, worker pool, progress events, cancellable tasks, result store — indispensable pour ne pas freezer l'UI sur grosses analyses
+- **Virtualisation explicite des DataFrames** : virtual scrolling, lazy row loading, column virtualization, pagination memory-aware (au-delà de la virtualisation Qt actuelle)
+- **Plugin loader + sandbox runner** (RestrictedPython → subprocess isolé → microVM)
+- **Workflow DAG engine** : composition reproductible Cleaning → Transform → FE → Model → Eval → Report
+- **Projects, sessions, snapshots** : persistance multi-fichiers + reprise après fermeture
+
+#### Séries temporelles
+- ARIMA, SARIMA, Holt-Winters, ARDL
+- VAR, VECM, BVAR, Granger, IRF, FEVD, Johansen
+
+#### Machine Learning
+- 15+ algorithmes (régression + classification)
+- Entraînement compétitif avec ranking + SHAP
+
+#### Distribution
+- Packaging Windows MSI signed + auto-update
+- AppImage Linux + DMG macOS
+- Marketplace plugins en ligne
+
+### ⚪ Long terme (v2+)
+
+- **Rust + PyO3** pour kernels analytiques critiques (PCA massif, ML, streaming)
+- **GPU compute** optionnel (cuDF / RAPIDS / Numba CUDA) pour preprocessing
+- **OpenStats Cloud** : sync, collaboration, marketplace plugins, IA distante (complémentaire au desktop)
+
+### ⚠️ Limites connues (v0.1.x)
+
+- **GIL Python** : se sentira sur PCA massive / gros ML / preprocessing parallèle. Mitigations futures : `multiprocessing`, `polars`, `numba`, kernels Rust.
+- **Pas encore de job scheduler async** : analyses lourdes bloquent le thread UI — priorité haute en planning.
+- **QtCharts limité** : pas de boxplot natif Python jusqu'à récemment, performances sur scatterplots massifs → PyQtGraph en migration.
 
 ---
 
-## Licence
-
-À définir.
-
----
 
 **OpenStats Desktop** — *Elmas Labs* — 2026
 
