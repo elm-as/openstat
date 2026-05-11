@@ -53,7 +53,7 @@ OpenStats Desktop est un laboratoire analytique moderne pour data analysts, éco
 | **Core engine** | Python 3.11+ (asyncio, QThreadPool) |
 | **Storage** | DuckDB + Parquet + Apache Arrow |
 | **Analytics** | pandas, polars, statsmodels, linearmodels, arch, scikit-learn, shap |
-| **LLM local** | llama-cpp-python (modèles GGUF) |
+| **LLM (BYOK)** | Clients HTTP (httpx) vers providers tiers — aucune dépendance lourde |
 | **Auth** | SQLite chiffré local (cryptography) |
 | **Sandbox plugins** | RestrictedPython + subprocess isolé |
 | **Packaging** | PyInstaller + Qt Installer Framework (Windows MSI) |
@@ -98,10 +98,33 @@ OpenStats Desktop est un laboratoire analytique moderne pour data analysts, éco
 - Export publication-ready (PNG haute résolution, SVG, PDF vectoriel)
 - Rendu GPU via QtCharts
 
-### IA intégrée
-- Génération de scripts Python à partir de prompts (local via llama.cpp)
-- Interprétation automatique des résultats
-- Recommandations de modèles
+### IA intégrée — BYOK (Bring Your Own Key)
+
+OpenStats **n'embarque aucun modèle** et **n'envoie aucune donnée** vers un service tiers tant que l'utilisateur n'a pas explicitement configuré son provider IA dans **Paramètres → IA**.
+
+**Providers connus pris en charge nativement** (l'utilisateur fournit uniquement sa clé) :
+- OpenAI (GPT-4o, o1)
+- Anthropic (Claude 4, Claude 3.5)
+- DeepSeek (Chat, Reasoner, Coder)
+- Mistral AI (Large, Small, Codestral)
+- Google Gemini (compat OpenAI)
+- Groq (Llama 3.3, Mixtral)
+- OpenRouter (catalogue multi-modèles)
+- xAI (Grok)
+- Ollama (local, optionnel)
+
+**Provider personnalisé** : si ton provider n'est pas listé (vLLM, LM Studio, Together, Anyscale, serveur interne…), tu fournis :
+- URL de base (ex: `https://api.mon-provider.com/v1`)
+- Nom du modèle
+- Format d'API (`openai_compatible` ou `anthropic_compatible`)
+
+Les clés sont **chiffrées localement** (Fernet, dossier de configuration utilisateur) et ne sont **jamais** synchronisées ailleurs.
+
+**Cas d'usage** :
+- Génération de scripts Python à partir de prompts
+- Interprétation automatique des résultats statistiques
+- Recommandations de modèles ML adaptés au dataset
+- Aide à la rédaction de rapports
 
 ### Plugin system
 - Contrat `OpenStatsPlugin` standardisé
@@ -199,8 +222,10 @@ OpenStats-Desktop/
 │       │   ├── scree.py
 │       │   ├── residuals.py
 │       │   └── exporters.py         # PNG/SVG/PDF
-│       ├── llm/                     # IA locale
-│       │   ├── runtime.py           # llama.cpp wrapper
+│       ├── llm/                     # IA — BYOK (clients HTTP)
+│       │   ├── providers.py         # Registre providers connus + custom
+│       │   ├── client.py            # Client unifié OpenAI/Anthropic compat
+│       │   ├── keystore.py          # Stockage chiffré des clés API
 │       │   ├── prompts.py           # Templates prompts
 │       │   └── interpreter.py       # Interprétation résultats
 │       ├── plugins/                 # Plugin system
@@ -240,4 +265,11 @@ OpenStats-Desktop/
 
 ---
 
+## Licence
+
+À définir.
+
+---
+
 **OpenStats Desktop** — *Elmas Labs* — 2026
+
