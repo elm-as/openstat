@@ -114,7 +114,8 @@ OpenStats Desktop est un laboratoire analytique moderne pour data analysts, éco
 
 ```bash
 # Clone
-cd C:/Users/elmas/Desktop/Projets/OpenStats-Desktop
+git clone https://github.com/elm-as/openstat.git
+cd openstat
 
 # Environnement virtuel
 python -m venv .venv
